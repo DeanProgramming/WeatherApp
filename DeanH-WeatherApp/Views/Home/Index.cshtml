@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<style>
+    .hidden {
+        display: none;
+    }
+</style>
+
+<div class="text-center">
+    <div>
+        <label for="locationInput">Enter Location:</label>
+        <input type="text" id="locationInput" />
+        <button type="button" onclick="updateWeather()">Get Weather</button>
+        <div id="errorMessage"></div>
+    </div>
+
+    <div id="weatherInfo" class="hidden">
+        <h1>Current Weather</h1>
+        <p>Temperature: <span id="temperature"></span>&deg;C</p>
+        <p>Humidity: <span id="humidity"></span>%</p>
+        <p>Description: <span id="weatherDescription"></span></p>
+        <iframe id="mapIframe" width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 1px solid black"></iframe>
+    </div> 
+</div>
+
+<script>
+    function refreshMap(latitude, longitude) {
+        var iframe = document.getElementById('mapIframe');
+        var src = `https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.008}%2C${latitude - 0.005}%2C${longitude + 0.008}%2C${latitude + 0.005}&amp;layer=mapnik`;
+        iframe.src = src;
+    }
+
+    function updateWeather() {
+        var location = document.getElementById('locationInput').value;
+
+        fetch('/Home/GetWeather?location=' + encodeURIComponent(location))
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    console.error(response.status); 
+                    // Show the error message
+                    document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
+                    return;
+                }
+            })
+            .then(data => {
+                if (data == null){
+                    return;
+                }
+
+                document.getElementById('temperature').textContent = data.main.temp;
+                document.getElementById('humidity').textContent = data.main.humidity;
+                document.getElementById('weatherDescription').textContent = data.weather[0].description;
+                refreshMap(data.coord.lat, data.coord.lon);
+
+                // Show the weather information
+                document.getElementById('weatherInfo').classList.remove('hidden');
+                
+                document.getElementById('errorMessage').textContent = '';
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    }
+</script>
