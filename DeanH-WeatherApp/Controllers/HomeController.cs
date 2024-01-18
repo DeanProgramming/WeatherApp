@@ -48,16 +48,16 @@ namespace DeanH_WeatherApp.Controllers
 
             HttpResponseMessage response = await _httpClient.GetAsync(apiUrl);
 
+            WeatherData weatherData = new WeatherData();
+
             if (response.IsSuccessStatusCode)
             {
                 string responseBody = await response.Content.ReadAsStringAsync();
                 Console.WriteLine(responseBody);
-                WeatherData weatherData = JsonConvert.DeserializeObject<WeatherData>(responseBody);
-
-                return Json(weatherData);
+                weatherData = JsonConvert.DeserializeObject<WeatherData>(responseBody);
             }
 
-            return View();
+            return Json(weatherData);
         }
     }
 }
