@@ -32,22 +32,18 @@
         iframe.src = src;
     }
 
-    function updateWeather() {
-        var location = document.getElementById('locationInput').value;
-
-        fetch('/Home/GetWeather?location=' + encodeURIComponent(location))
+    function fetchWeather(url) {
+        fetch(url)
             .then(response => {
                 if (response.ok) {
-                    return response.json();
+                    return response.json(); 
                 } else {
-                    console.error(response.status); 
-                    // Show the error message
                     document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
-                    return;
+                    return null;  // Resolve with null to avoid console error
                 }
             })
             .then(data => {
-                if (data == null){
+                if (data === null) {
                     return;
                 }
 
@@ -57,12 +53,42 @@
                 refreshMap(data.coord.lat, data.coord.lon);
 
                 // Show the weather information
-                document.getElementById('weatherInfo').classList.remove('hidden');
-                
+                document.getElementById('weatherInfo').classList.remove('hidden'); 
                 document.getElementById('errorMessage').textContent = '';
             })
             .catch(error => {
-                console.error(error);
+                document.getElementById('errorMessage').textContent = 'An error occurred while fetching weather data.';
             });
     }
+     
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                // Handle the user's current position
+                var url = '/Home/GetWeatherByLatLong?lat=' + position.coords.latitude + "&lon=" + position.coords.longitude;
+                fetchWeather(url);
+            },
+            (error) => {
+                console.error(error);
+            }
+        );
+    } else {
+        // Geolocation is not supported
+        console.log("Not Supported");
+    } 
+
+    function updateWeather() {
+        var location = document.getElementById('locationInput').value;
+        var url = '/Home/GetWeatherByLocation?location=' + encodeURIComponent(location);
+
+        // Check if the location is not empty
+        if (location !== '') {
+            var url = '/Home/GetWeatherByLocation?location=' + encodeURIComponent(location);
+            fetchWeather(url);
+        } else {
+            // Display an error message or take appropriate action for empty location
+            document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
+        }
+    }
+
 </script>
