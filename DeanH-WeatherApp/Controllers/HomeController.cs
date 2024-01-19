@@ -59,5 +59,60 @@ namespace DeanH_WeatherApp.Controllers
 
             return Json(weatherData);
         }
+
+
+
+        public async Task<IActionResult?> Get5DayForecastByLocation(string location)
+        {
+            string apiUrl = $"forecast?q={location}&appid={apiKey}&units=metric";
+            return await Get5DayForecastWeather(apiUrl);
+        }
+
+        public async Task<IActionResult?> Get5DayForecastByLatLong(string lat, string lon)
+        {
+            if (string.IsNullOrEmpty(lat) || string.IsNullOrEmpty(lon))
+            {
+                return View();
+            }
+
+            string apiUrl = $"forecast?lat={lat}&lon={lon}&appid={apiKey}&units=metric";
+            return await Get5DayForecastWeather(apiUrl);
+        }
+
+        private async Task<IActionResult?> Get5DayForecastWeather(string apiUrl)
+        {
+            _httpClient.BaseAddress = new Uri("https://api.openweathermap.org/data/2.5/");
+
+            HttpResponseMessage response = await _httpClient.GetAsync(apiUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(responseBody);
+
+                    // Deserialize the entire response into NextFiveDayForecastData.Root
+                    NextFiveDayForecastData.Root forecastData = JsonConvert.DeserializeObject<NextFiveDayForecastData.Root>(responseBody);
+
+                    // Extract the list of the next 5 days
+                    List<NextFiveDayForecastData.List> nextFiveDaysList = forecastData.list.Take(80).ToList();
+
+                    return Json(nextFiveDaysList);
+                }
+                catch (JsonException ex)
+                {
+                    // Handle JSON deserialization errors
+                    Console.WriteLine("Error deserializing JSON: " + ex.Message);
+                    return StatusCode(500); // Or any appropriate error response
+                }
+            }
+            else
+            {
+                // Handle unsuccessful API response
+                Console.WriteLine("Error: " + response.ReasonPhrase);
+                return StatusCode((int)response.StatusCode); // Or any appropriate error response
+            }
+        }
     }
 }

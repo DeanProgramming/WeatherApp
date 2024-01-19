@@ -22,7 +22,12 @@
         <p>Humidity: <span id="humidity"></span>%</p>
         <p>Description: <span id="weatherDescription"></span></p>
         <iframe id="mapIframe" width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 1px solid black"></iframe>
-    </div> 
+ 
+        <body> 
+                <h2>5-Day Weather Forecast</h2>
+                <div id="forecastContainer"></div>
+        </body>
+    </div>
 </div>
 
 <script>
@@ -32,7 +37,7 @@
         iframe.src = src;
     }
 
-    function fetchWeather(url) {
+    function fetchCurrentWeather(url) {
         fetch(url)
             .then(response => {
                 if (response.ok) { 
@@ -48,7 +53,7 @@
                     document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
                     return;
                 } 
-                 
+                                 
                 document.getElementById('temperature').textContent = data.main.temp;
                 document.getElementById('humidity').textContent = data.main.humidity;
                 document.getElementById('weatherDescription').textContent = data.weather[0].description;
@@ -68,7 +73,9 @@
             (position) => {
                 // Handle the user's current position
                 var url = '/Home/GetWeatherByLatLong?lat=' + position.coords.latitude + "&lon=" + position.coords.longitude;
-                fetchWeather(url);
+                fetchCurrentWeather(url);
+                var url = '/Home/Get5DayForecastByLatLong?lat=' + position.coords.latitude + "&lon=" + position.coords.longitude;
+                fetchNextFiveDayWeather(url);
             },
             (error) => {
                 console.error(error);
@@ -86,11 +93,91 @@
         // Check if the location is not empty
         if (location !== '') {
             var url = '/Home/GetWeatherByLocation?location=' + encodeURIComponent(location);
-            fetchWeather(url);
+            fetchCurrentWeather(url);
+            var url = '/Home/Get5DayForecastByLocation?location=' + encodeURIComponent(location);
+            fetchNextFiveDayWeather(url);
         } else {
             // Display an error message or take appropriate action for empty location
             document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
         }
     }
+
+
+
+
+    function fetchNextFiveDayWeather(url) {
+        fetch(url)
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
+                    console.log("FAILED HERE");
+                    return null;  // Resolve with null to avoid console error
+                }
+            })
+            .then(data => {
+                if (data == null) {
+                    console.log("FAILED HERE1");
+                }
+                
+                const forecastContainer = document.getElementById('forecastContainer');
+                // Clear previous content
+                forecastContainer.innerHTML = '';
+
+                console.log(data);
+
+                // Display the first 5 days
+                const firstFiveDays = data.slice(0, 5);
+                firstFiveDays.forEach(day => {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day';
+
+                    dayElement.innerHTML = `
+                        <p>Date/Time: ${day.dt_txt}</p>
+                        <p>Temperature: ${day.main.temp} °C</p>
+                        <p>Description: ${day.weather[0].description}</p>
+                        <p>Humidity: ${day.main.humidity}%</p>
+                        <hr>
+                    `;
+
+                    forecastContainer.appendChild(dayElement);
+                });
+
+                //displayAverageTemperature(data.slice(10,15), 0);
+
+            })
+            .catch(error => {
+                console.log("FAILED HERE2");
+                document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
+            });
+    }
+    
+    function displayAverageTemperature(dataSlice, startIndex) {
+        let averageTemperature = 0;
+        let TheDay = "";
+
+        dataSlice.forEach(day => {
+            TheDay = day.dt_txt;
+            averageTemperature += day.main.temp;
+        });
+
+        averageTemperature /= 5; // Divide by the number of days
+
+        const forecastContainer = document.getElementById('forecastContainer');
+
+        const dayElement = document.createElement('div');
+        dayElement.className = 'daywwww';
+
+        /*
+        dayElement.innerHTML = `
+            <p>Date/Time (Average for Days ${startIndex + 1}-${startIndex + 5}): ${TheDay}</p>
+            <p>Average Temperature: ${averageTemperature.toFixed(2)} °C</p>
+            <hr>
+        `;
+        */
+        forecastContainer.appendChild(dayElement);
+    }
+
 
 </script>
