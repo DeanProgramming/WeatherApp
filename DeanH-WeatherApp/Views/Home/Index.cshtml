@@ -21,10 +21,11 @@
         <p>Temperature: <span id="temperature"></span>&deg;C</p>
         <p>Humidity: <span id="humidity"></span>%</p>
         <p>Description: <span id="weatherDescription"></span></p>
+        <p>Sunrise: <span id="sunRise"></span></p>
+        <p>Sunset: <span id="sunSet"></span></p>
         <iframe id="mapIframe" width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 1px solid black"></iframe>
  
         <body> 
-                <h2>5-Day Weather Forecast</h2>
                 <div id="forecastContainer"></div>
         </body>
     </div>
@@ -57,6 +58,16 @@
                 document.getElementById('temperature').textContent = data.main.temp;
                 document.getElementById('humidity').textContent = data.main.humidity;
                 document.getElementById('weatherDescription').textContent = data.weather[0].description;
+
+                const sunriseDate = new Date(data.sys.sunrise * 1000);
+                const sunsetDate = new Date(data.sys.sunset * 1000);
+                 
+                const formattedSunriseTime = sunriseDate.toLocaleTimeString();
+                const formattedSunsetTime = sunsetDate.toLocaleTimeString();                                      
+
+                document.getElementById('sunRise').textContent = formattedSunriseTime;
+                document.getElementById('sunSet').textContent = formattedSunsetTime;
+
                 refreshMap(data.coord.lat, data.coord.lon);
 
                 // Show the weather information
@@ -103,7 +114,16 @@
     }
 
 
+    function isSameDay(date1, date2) {  
+        return date1.substr(0, 10) === date2.substr(0, 10);
+    }   
 
+    class NextDaysData {
+        constructor() {
+            this.date = "";
+            this.averageTemperature = 0;
+        }
+    }
 
     function fetchNextFiveDayWeather(url) {
         fetch(url)
@@ -112,72 +132,77 @@
                     return response.json();
                 } else {
                     document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
-                    console.log("FAILED HERE");
                     return null;  // Resolve with null to avoid console error
                 }
             })
             .then(data => {
-                if (data == null) {
-                    console.log("FAILED HERE1");
-                }
-                
+                if (data == null) 
+                { 
+                    document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
+                    return;
+                }                 
+
                 const forecastContainer = document.getElementById('forecastContainer');
                 // Clear previous content
                 forecastContainer.innerHTML = '';
+                 
+                var currentTime = new Date().toISOString(); 
+                currentTime = currentTime.substr(0, 10); 
 
-                console.log(data);
+                const nextCoupleDaysForecast = [];
 
-                // Display the first 5 days
-                const firstFiveDays = data.slice(0, 5);
-                firstFiveDays.forEach(day => {
+                let averageTemperature = 0;
+                let dateSets = 0;
+
+
+                data.forEach(day => {
+                    if (isSameDay(day.dt_txt, currentTime)) {                  
+                        averageTemperature += day.main.temp;
+                        dateSets++;    
+                    } else { 
+                        const nextDay = new NextDaysData();
+                        nextDay.date = currentTime;
+                        nextDay.averageTemperature = (averageTemperature / dateSets);
+                        nextCoupleDaysForecast.push(nextDay);
+
+                        averageTemperature = day.main.temp;
+                        dateSets = 1; 
+                        currentTime = day.dt_txt;
+                    }
+                });
+
+                let startIndex = 0;
+
+                if (nextCoupleDaysForecast[0].date == new Date().toISOString().substr(0, 10)){
+                    startIndex++; //Skip if its the current day
+                } 
+
+                const dayElement = document.createElement('div');
+                    dayElement.className = 'day';
+
+                    dayElement.innerHTML = `
+                        <h2>${5 - startIndex} Day Weather Forecast</h2>  
+                    `;
+
+                    forecastContainer.appendChild(dayElement);             
+                
+
+                for (let i = startIndex; i < nextCoupleDaysForecast.length; i++){
                     const dayElement = document.createElement('div');
                     dayElement.className = 'day';
 
                     dayElement.innerHTML = `
-                        <p>Date/Time: ${day.dt_txt}</p>
-                        <p>Temperature: ${day.main.temp} °C</p>
-                        <p>Description: ${day.weather[0].description}</p>
-                        <p>Humidity: ${day.main.humidity}%</p>
+                        <p>Date: ${nextCoupleDaysForecast[i].date.substr(0, 10)}</p>
+                        <p>Temperature: ${nextCoupleDaysForecast[i].averageTemperature.toFixed(2)} °C</p> 
                         <hr>
                     `;
 
                     forecastContainer.appendChild(dayElement);
-                });
-
-                //displayAverageTemperature(data.slice(10,15), 0);
-
+                }
             })
             .catch(error => {
-                console.log("FAILED HERE2");
                 document.getElementById('errorMessage').textContent = 'Please enter a valid location.';
             });
     }
-    
-    function displayAverageTemperature(dataSlice, startIndex) {
-        let averageTemperature = 0;
-        let TheDay = "";
-
-        dataSlice.forEach(day => {
-            TheDay = day.dt_txt;
-            averageTemperature += day.main.temp;
-        });
-
-        averageTemperature /= 5; // Divide by the number of days
-
-        const forecastContainer = document.getElementById('forecastContainer');
-
-        const dayElement = document.createElement('div');
-        dayElement.className = 'daywwww';
-
-        /*
-        dayElement.innerHTML = `
-            <p>Date/Time (Average for Days ${startIndex + 1}-${startIndex + 5}): ${TheDay}</p>
-            <p>Average Temperature: ${averageTemperature.toFixed(2)} °C</p>
-            <hr>
-        `;
-        */
-        forecastContainer.appendChild(dayElement);
-    }
-
 
 </script>

@@ -85,34 +85,22 @@ namespace DeanH_WeatherApp.Controllers
 
             HttpResponseMessage response = await _httpClient.GetAsync(apiUrl);
 
+
+            List<NextFiveDayForecastData.List> nextFiveDaysList = new List<NextFiveDayForecastData.List>();
+
             if (response.IsSuccessStatusCode)
             {
-                try
-                {
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
+                string responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(responseBody);
+                NextFiveDayForecastData.Root forecastData = JsonConvert.DeserializeObject<NextFiveDayForecastData.Root>(responseBody);
 
-                    // Deserialize the entire response into NextFiveDayForecastData.Root
-                    NextFiveDayForecastData.Root forecastData = JsonConvert.DeserializeObject<NextFiveDayForecastData.Root>(responseBody);
+                // Extract the list of the next 5 days
+                nextFiveDaysList = forecastData.list.Take(80).ToList();
 
-                    // Extract the list of the next 5 days
-                    List<NextFiveDayForecastData.List> nextFiveDaysList = forecastData.list.Take(80).ToList();
-
-                    return Json(nextFiveDaysList);
-                }
-                catch (JsonException ex)
-                {
-                    // Handle JSON deserialization errors
-                    Console.WriteLine("Error deserializing JSON: " + ex.Message);
-                    return StatusCode(500); // Or any appropriate error response
-                }
+                return Json(nextFiveDaysList);
             }
-            else
-            {
-                // Handle unsuccessful API response
-                Console.WriteLine("Error: " + response.ReasonPhrase);
-                return StatusCode((int)response.StatusCode); // Or any appropriate error response
-            }
+
+            return Json(nextFiveDaysList);
         }
     }
 }
