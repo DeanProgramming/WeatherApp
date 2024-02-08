@@ -22,6 +22,9 @@
 
 The application is deployed on **Azure**, ensuring a reliable and scalable hosting environment.
 
+## Project URL
+Visit the [Weather App](https://weatherapp-deanholland.azurewebsites.net/) to explore the code and see the project in action.
+
 ## Unit Testing
 
 In addition to the main project, this repository includes a companion project containing unit tests for the **.NET** components. The test project comprises 10 different unit tests that validate the functionality, performance, and reliability of various aspects of the application.
