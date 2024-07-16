@@ -12,7 +12,7 @@ namespace DeanH_WeatherApp.Controllers
 {
     public class HomeController : Controller
     {
-        public string apiKey = "78d568fc875b58a3430f950f42fcc553"; //Inapproapiate to have my API key exposed like this. I would take additional steps to protect it in build
+        public string apiKey = "API_KEY";
 
         private readonly HttpClient _httpClient = new HttpClient();
 
