@@ -32,7 +32,7 @@ The application is deployed on **Azure**, ensuring a reliable and scalable hosti
    - Navigate to the project directory: `cd WeatherApp`
 
 3. **API Setup**
-   - Find API key called "API_KEY" and import a free api key from [f](https://openweathermap.org/api)
+   - Find API key called "API_KEY" and import a free api key from [Open Weather](https://openweathermap.org/api)
 
 4. **Run the Application**
    - Run the application using the following command: `dotnet run`
