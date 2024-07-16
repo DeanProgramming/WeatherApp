@@ -22,6 +22,24 @@
 
 The application is deployed on **Azure**, ensuring a reliable and scalable hosting environment.
 
+## Getting Started
+
+1. **Prerequisites**
+   - Install [.NET Core](https://dotnet.microsoft.com/download) 
+
+2. **Installation**
+   - Clone the repository: `git clone https://github.com/DeanProgramming/WeatherApp.git`
+   - Navigate to the project directory: `cd WeatherApp`
+
+3. **API Setup**
+   - Find API key called "API_KEY" and import a free api key from [f](https://openweathermap.org/api)
+
+4. **Run the Application**
+   - Run the application using the following command: `dotnet run`
+
+5. **Access the Application**
+   - Open your web browser and go to `http://localhost:5000` to access the Weather App.
+
 ## Project URL
 Visit the [Weather App](https://weatherapp-deanholland.azurewebsites.net/) to explore the code and see the project in action.
 
