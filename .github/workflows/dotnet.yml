@@ -1,36 +1,66 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Build, test and publish WeatherApp
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-    - name: Publish
-      run: dotnet publish DeanH-WeatherApp/DeanH-WeatherApp.csproj -c Release -o website
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: website
-        path: /home/runner/work/WeatherApp/WeatherApp/website/**
-        if-no-files-found: error
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore DeanH-WeatherApp.sln
+
+      - name: Build solution
+        run: dotnet build DeanH-WeatherApp.sln --configuration Release --no-restore
+
+      - name: Run NUnit tests
+        id: tests
+        run: >-
+          dotnet test DeanH-WeatherApp.sln --configuration Release --no-build
+          --logger "console;verbosity=normal"
+          --logger "trx;LogFileName=weather-tests.trx"
+          --results-directory "$RUNNER_TEMP/TestResults"
+          -- RunConfiguration.TreatNoTestsAsError=true
+
+      - name: Report NUnit results
+        if: ${{ !cancelled() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
+        shell: pwsh
+        run: |
+          [xml]$trx = Get-Content -LiteralPath "$env:RUNNER_TEMP/TestResults/weather-tests.trx" -Raw -ErrorAction Stop
+          $counts = $trx.TestRun.ResultSummary.Counters
+          "NUnit: $($counts.executed)/$($counts.total) executed, $($counts.passed) passed, $($counts.failed) failed." >> $env:GITHUB_STEP_SUMMARY
+          if ([int]$counts.passed -lt 1) { throw 'No NUnit tests passed.' }
+
+      - name: Upload test results
+        if: ${{ !cancelled() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: ${{ runner.temp }}/TestResults/weather-tests.trx
+          if-no-files-found: error
+
+      - name: Publish web app
+        run: dotnet publish DeanH-WeatherApp/DeanH-WeatherApp.csproj --configuration Release --no-build --output website
+
+      - name: Upload web app
+        uses: actions/upload-artifact@v7
+        with:
+          name: website
+          path: website/
+          if-no-files-found: error
