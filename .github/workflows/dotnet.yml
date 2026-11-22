@@ -21,7 +21,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '9.0.308'
 
       - name: Restore dependencies
         run: dotnet restore DeanH-WeatherApp.sln
